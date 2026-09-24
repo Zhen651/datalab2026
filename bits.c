@@ -40,6 +40,20 @@ int bitAnd(int x, int y) {
 int bitXor(int x, int y) {
     return ~(x & y) & ~(~x & ~y);
 }
+/*
+0100 ^ 0101 = 0001
+异或门即1^1 0^0=0，1^0 0^1=1
+xy相同必有x&y=1 | 0
+不同必有 x&y=0;
+情况1：x和y不都为0
+都为1时x&y=1，否则为0，按位取反
+情况2：x和y都为0
+x&y=0
+但会和情况1混淆
+先取反~x&~y=1
+再取反为0
+两者取&
+*/
 
 /*
  * samesign - Determines if two integers have the same sign.
@@ -66,6 +80,13 @@ int samesign(int x, int y) {
     if (!x_zero && y_zero) return 0;
     return !((x ^ y) >> 31);
 }
+/*
+分有0没0两种情况
+没0因为int是32位，直接取第31位看是否^
+有0再分两种，全0或者1个0
+全0示例给的1，所以取反后&&操作为1
+一个0分x和y再取
+*/
 
 /*
  * logtwo - Calculate the base-2 logarithm of a positive integer using bit
@@ -93,6 +114,11 @@ int logtwo(int v) {
     r |= v >> 1;
     return r;
 }
+/*
+算2进制对数向下取整
+实际上在找最高的1所在位
+二分查找，16+8+4+2+1=31
+*/
 
 /*
  *  byteSwap - swaps the nth byte and the mth byte
@@ -112,6 +138,10 @@ int byteSwap(int x, int n, int m) {
     x = x | (n_x << m_) | (m_x << n_);
     return x;
 }
+/*
+将第m和第n字节互换
+取第m和n字节，将对应位置清空，再互换m、n
+*/
 
 /*
  * reverse - Reverse the bit order of a 32-bit unsigned integer.
@@ -129,6 +159,13 @@ unsigned reverse(unsigned v) {
     v = (v >> 16) | (v << 16);
     return v;
 }
+/*
+颠倒二进制串
+unsigned有8byte，设为12345678
+先交换相邻21 43 65 87=abcd
+继续相邻交换ba dc(4321 8765)
+最后交换为87654321
+*/
 
 /*
  * logicalShift - shift x to the right by n, using a logical shift
@@ -142,6 +179,11 @@ int logicalShift(int x, int n) {
     int y = ~(((1<<31 ) >> n) << 1);
     return (x>>n)&y;
 }
+/*
+正数直接右移
+负数算术右移和逻辑右移不同，要把1去掉
+构造掩码，最后n位为0，其余都是1
+*/
 
 /*
  * leftBitCount - returns count of number of consective 1's in left-hand (most) end of word.
@@ -156,7 +198,7 @@ int leftBitCount(int x) {
     int t;
     t = !(~x >> 16);
     r += t << 4;
-    x <<= t << 4;
+    x <<( t << 4);
     t = !(~x >> 24);
     r += t << 3;
     x <<= t << 3;
@@ -173,6 +215,17 @@ int leftBitCount(int x) {
     r += (x >> 31) & 1;
     return r;
 }
+/*
+int是32位
+统计连续的1个数
+和logtwo一个思想用二分
+前16位开始 如果全1那么处理后变为全0 t=1
+若t=1 那么知r>=16
+再把x左移看后16位
+以此类推
+若前16位不是连续1 则按照上述思想再看前8位 4 2 1
+以此类推直到最后一步防止全1被阴
+*/
 
 /*
  * float_i2f - Return bit-level equivalent of expression (float) x
@@ -201,6 +254,14 @@ unsigned float_i2f(int x) {
     }
     return (x & 0x80000000) | (exp << 23) | frac;
 }
+/*
+先处理0和符号:x为0直接返回0;否则取绝对值abs,若x为负,符号位记为1,用~x+1求补码绝对值;若正,符号位为0
+接着找abs的最高位1,用二分法依次判断abs的高16、8、4、2、1位是否为0,若为0就左移相应位数,并累加左移量到shift,使最高位1最终落在第31位
+然后算阶码:真实指数是31-shift,加上偏置127,得exp=158-shift
+提取尾数:此时第31位是隐含的1,第30~8位是尾数（因为浮点数要规格化）,所以把abs右移8位,再与0x7FFFFF取低23位,得到frac
+四舍五入:取被舍掉的低8位abs（上一步只取了30~8）&0xFF加上尾数最低位frac&1,若大于0x80就进位,frac加一;若进位导致frac溢出到第23位,则frac清0,exp加一
+最后把符号位、exp<<23、frac三部分按位或,拼成最终float
+*/
 
 /*
  * floatScale2 - Return bit-level equivalent of expression 2*f for
