@@ -194,26 +194,15 @@ int logicalShift(int x, int n) {
  *   Difficulty: 4
  */
 int leftBitCount(int x) {
-    int r = 0;
+    int count = 0;
+    int inv = ~x;
     int t;
-    t = !(~x >> 16);
-    r += t << 4;
-    x <<( t << 4);
-    t = !(~x >> 24);
-    r += t << 3;
-    x <<= t << 3;
-    t = !(~x >> 28);
-    r += t << 2;
-    x <<= t << 2;
-    t = !(~x >> 30);
-    r += t << 1;
-    x <<= t << 1;
-    t = !(~x >> 31);
-    r += t;
-    x <<= t;
-    
-    r += (x >> 31) & 1;
-    return r;
+    t = !(inv >> 16); count += t << 4; inv <<= t << 4;
+    t = !(inv >> 24); count += t << 3; inv <<= t << 3;
+    t = !(inv >> 28); count += t << 2; inv <<= t << 2;
+    t = !(inv >> 30); count += t << 1; inv <<= t << 1;
+    t = !(inv >> 31); count += t;      inv <<= t;
+    return count + !inv;
 }
 /*
 int是32位
